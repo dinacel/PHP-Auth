@@ -30,6 +30,8 @@ final class Auth extends UserManager {
 	private $sessionResyncInterval;
 	/** @var string the name of the cookie used for the 'remember me' feature */
 	private $rememberCookieName;
+	/** @var string|null the cookie SameSite attribute */
+	protected $sameSiteRestriction = Cookie::SAME_SITE_RESTRICTION_LAX;
 
 	/**
 	 * @param PdoDatabase|PdoDsn|\PDO $databaseConnection the database connection to operate on
@@ -65,7 +67,7 @@ final class Auth extends UserManager {
 			\ini_set('session.use_trans_sid', 0);
 
 			// start the session (requests a cookie to be written on the client)
-			@Session::start();
+			@Session::start($this->sameSiteRestriction);
 		}
 	}
 
@@ -437,7 +439,7 @@ final class Auth extends UserManager {
 		$_SESSION[self::SESSION_FIELD_FORCE_LOGOUT]++;
 
 		// re-generate the session ID to prevent session fixation attacks (requests a cookie to be written on the client)
-		Session::regenerate(true);
+		Session::regenerate(true, $this->sameSiteRestriction);
 
 		// if there had been an existing remember directive previously
 		if (isset($previousRememberDirectiveExpiry)) {
@@ -543,6 +545,7 @@ final class Auth extends UserManager {
 		$cookie->setDomain($params['domain']);
 		$cookie->setHttpOnly($params['httponly']);
 		$cookie->setSecureOnly($params['secure']);
+		$cookie->setSameSiteRestriction($this->sameSiteRestriction);
 		$result = $cookie->save();
 
 		if ($result === false) {
@@ -557,6 +560,7 @@ final class Auth extends UserManager {
 			$cookie->setDomain($params['domain']);
 			$cookie->setHttpOnly($params['httponly']);
 			$cookie->setSecureOnly($params['secure']);
+      $cookie->setSameSiteRestriction($this->sameSiteRestriction);
 			$cookie->delete();
 		}
 	}
@@ -591,6 +595,7 @@ final class Auth extends UserManager {
 		$cookie->setDomain($params['domain']);
 		$cookie->setHttpOnly($params['httponly']);
 		$cookie->setSecureOnly($params['secure']);
+		$cookie->setSameSiteRestriction($this->sameSiteRestriction);
 		$result = $cookie->delete();
 
 		if ($result === false) {

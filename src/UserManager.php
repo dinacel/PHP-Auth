@@ -9,6 +9,7 @@
 namespace Delight\Auth;
 
 use Delight\Base64\Base64;
+use Delight\Cookie\Cookie;
 use Delight\Cookie\Session;
 use Delight\Db\PdoDatabase;
 use Delight\Db\PdoDsn;
@@ -48,6 +49,9 @@ abstract class UserManager {
 	/** @var string the prefix for the names of all database tables used by this component */
 	protected $dbTablePrefix;
 
+	/** @var string|null the cookie SameSite attribute */
+	protected $sameSiteRestriction = Cookie::SAME_SITE_RESTRICTION_LAX;
+
 	/**
 	 * Creates a random string with the given maximum length
 	 *
@@ -65,6 +69,10 @@ abstract class UserManager {
 
 		// return the Base64-encoded result
 		return Base64::encodeUrlSafe($data);
+	}
+
+	public function setSameSiteRestriction($sameSiteRestriction = Cookie::SAME_SITE_RESTRICTION_LAX) {
+		$this->sameSiteRestriction = $sameSiteRestriction;	
 	}
 
 	/**
@@ -229,7 +237,7 @@ abstract class UserManager {
 	 */
 	protected function onLoginSuccessful($userId, $email, $username, $status, $roles, $forceLogout, $remembered) {
 		// re-generate the session ID to prevent session fixation attacks (requests a cookie to be written on the client)
-		Session::regenerate(true);
+		Session::regenerate(true, $this->sameSiteRestriction);
 
 		// save the user data in the session variables maintained by this library
 		$_SESSION[self::SESSION_FIELD_LOGGED_IN] = true;
